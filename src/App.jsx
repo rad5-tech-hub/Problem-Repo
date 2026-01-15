@@ -12,7 +12,7 @@ import IssueDetail from './Pages/IssueDetails';
 // import MyIssues from './pages/MyIssues';
 import Resolved from './pages/Resolved';
 import InnovationRecords from './Pages/InnovationRecords';
-import NewInnovation from './Pages/NewInnovation';
+// import NewInnovation from './Pages/NewInnovation';
 import InnovationDetail from './Pages/InnovationDetail';
 
 function App() {
@@ -30,7 +30,7 @@ function App() {
             {/* <Route path="/my-issues" element={<MyIssues />} /> */}
             <Route path="/resolved" element={<Resolved />} />
             <Route path="/innovation-records" element={<InnovationRecords />} />
-            <Route path="/innovation-records/new" element={<NewInnovation />} />
+            {/* <Route path="/innovation-records/new" element={<NewInnovation />} /> */}
             <Route path="/innovation-records/:id" element={<InnovationDetail />} />
           </Route>
 

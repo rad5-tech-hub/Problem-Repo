@@ -14,7 +14,6 @@ export default function ProtectedLayout() {
     // { to: '/my-issues', label: 'My Issues' },
     { to: '/resolved', label: 'Resolved' },
     { to: '/innovation-records', label: 'Innovation Records' },
-    { to: '/innovation-records/new', label: 'New Innovation' },
   ];
 
   const handleLogout = async () => {

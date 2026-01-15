@@ -1,4 +1,4 @@
-// src/pages/NewIssue.jsx
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authcontexts';
@@ -49,16 +49,16 @@ export default function NewIssue() {
         reporterId: user.uid,
         reporterName: user.displayName || user.email || 'Anonymous',
         status: 'Open',
-        assigneeId: null,
+        assignees: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(collection(db, 'issues'), issueData);
 
-      // Optional: you could show a success toast here
+      
       navigate('/issues', { replace: true });
-      // or navigate(`/issues/${docRef.id}`) to go directly to the new issue
+     
     } catch (err) {
       console.error('Error creating issue:', err);
       setError('Failed to create issue. Please try again.');

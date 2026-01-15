@@ -1,4 +1,3 @@
-// src/components/EmptyState.jsx
 export function EmptyState({ title = "Nothing here yet", message = "Create a new issue to get started" }) {
   return (
     <div className="bg-white rounded-lg p-10 text-center border border-dashed border-gray-300">

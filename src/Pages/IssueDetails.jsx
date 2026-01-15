@@ -1,10 +1,11 @@
-// src/pages/IssueDetail.jsx
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/authcontexts';
 import { format } from 'date-fns';
+import { addAssignee } from '../lib/issues'; // Make sure this is imported correctly
 
 const statusOptions = ['Open', 'In Progress', 'Resolved'];
 
@@ -17,10 +18,10 @@ export default function IssueDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const issueRef = doc(db, 'issues', id);
-
     const unsubscribe = onSnapshot(issueRef, (docSnap) => {
       if (docSnap.exists()) {
         setIssue({ id: docSnap.id, ...docSnap.data() });
@@ -39,7 +40,6 @@ export default function IssueDetail() {
 
   const handleStatusChange = async (newStatus) => {
     if (!issue || updating) return;
-
     setUpdating(true);
     try {
       const issueRef = doc(db, 'issues', id);
@@ -47,13 +47,10 @@ export default function IssueDetail() {
         status: newStatus,
         updatedAt: serverTimestamp(),
       };
-
       if (newStatus === 'Resolved' && issue.status !== 'Resolved') {
         updateData.resolvedAt = serverTimestamp();
       }
-
       await updateDoc(issueRef, updateData);
-      // onSnapshot will automatically update the local state
     } catch (err) {
       console.error('Error updating status:', err);
       alert('Failed to update status');
@@ -62,21 +59,16 @@ export default function IssueDetail() {
     }
   };
 
-  const handleAssignToMe = async () => {
-    if (!issue || updating || !user) return;
-
-    setUpdating(true);
+  const handleJoinAsAssignee = async () => {
+    setActionLoading(true);
     try {
-      const issueRef = doc(db, 'issues', id);
-      await updateDoc(issueRef, {
-        assigneeId: user.uid,
-        updatedAt: serverTimestamp(),
-      });
+      await addAssignee(id, user);
+      // onSnapshot will update the issue state automatically
     } catch (err) {
-      console.error('Error assigning issue:', err);
-      alert('Failed to assign issue');
+      console.error('Error joining as assignee:', err);
+      alert('Failed to join as assignee');
     } finally {
-      setUpdating(false);
+      setActionLoading(false);
     }
   };
 
@@ -99,58 +91,61 @@ export default function IssueDetail() {
         <p className="text-gray-600">{error || 'Issue not found'}</p>
         <button
           onClick={() => navigate('/issues')}
-          className="mt-6 px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-dark"
+          className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
-          Back to Dashboard
+          Back to Issues
         </button>
       </div>
     );
   }
 
-  const createdDate = issue.createdAt?.toDate?.() 
-    ? format(issue.createdAt.toDate(), 'PPP p') 
+  const createdDate = issue.createdAt?.toDate?.()
+    ? format(issue.createdAt.toDate(), 'PPP p')
     : '—';
 
   const resolvedDate = issue.resolvedAt?.toDate?.()
     ? format(issue.resolvedAt.toDate(), 'PPP p')
     : null;
 
+  const isAlreadyAssigned = issue.assignees?.some(a => a.uid === user.uid);
+  const hasAssignees = issue.assignees?.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="p-6 sm:p-8 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="p-6 sm:p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                 {issue.title}
               </h1>
               <div className="flex flex-wrap gap-3">
                 <span className={`
-                  px-3 py-1 rounded-full text-sm font-medium
-                  ${issue.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : ''}
-                  ${issue.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : ''}
-                  ${issue.status === 'Resolved' ? 'bg-green-100 text-green-800' : ''}
+                  px-4 py-1.5 rounded-full text-sm font-medium border
+                  ${issue.status === 'Open' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : ''}
+                  ${issue.status === 'In Progress' ? 'bg-blue-100 text-blue-800 border-blue-300' : ''}
+                  ${issue.status === 'Resolved' ? 'bg-green-100 text-green-800 border-green-300' : ''}
                 `}>
                   {issue.status}
                 </span>
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-300">
                   {issue.category}
                 </span>
               </div>
             </div>
 
-            {/* Status controls */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Status + Join Controls */}
+            <div className="flex flex-col sm:flex-row gap-4">
               <select
                 value={issue.status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={updating}
-                className={`
-                  px-4 py-2 border border-gray-300 rounded-md
-                  bg-white focus:ring-2 focus:ring-primary focus:border-primary
-                  disabled:opacity-60
-                `}
+                className="
+                  px-4 py-2.5 border border-gray-300 rounded-lg bg-white
+                  focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  disabled:opacity-60 min-w-[160px]
+                "
               >
                 {statusOptions.map(status => (
                   <option key={status} value={status}>
@@ -159,17 +154,24 @@ export default function IssueDetail() {
                 ))}
               </select>
 
-              {!issue.assigneeId && (
+              {!isAlreadyAssigned && issue.status !== 'Resolved' && (
                 <button
-                  onClick={handleAssignToMe}
-                  disabled={updating}
-                  className={`
-                    px-5 py-2 bg-primary text-white rounded-md
-                    hover:bg-primary-dark transition-colors
-                    disabled:opacity-60 flex items-center gap-2
-                  `}
+                  onClick={handleJoinAsAssignee}
+                  disabled={actionLoading}
+                  className="
+                    px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium
+                    rounded-lg shadow-sm transition-all disabled:opacity-60
+                    flex items-center gap-2
+                  "
                 >
-                  {updating ? 'Assigning...' : 'Assign to Me'}
+                  {actionLoading ? (
+                    <>
+                      <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                      Joining...
+                    </>
+                  ) : (
+                    'Assign to Me / Join'
+                  )}
                 </button>
               )}
             </div>
@@ -177,43 +179,62 @@ export default function IssueDetail() {
         </div>
 
         {/* Main content */}
-        <div className="p-6 sm:p-8">
-          <div className="prose max-w-none text-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-            <p className="whitespace-pre-wrap">
+        <div className="p-6 sm:p-8 space-y-10">
+          {/* Description */}
+          <section>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Description</h3>
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-6 rounded-xl border border-gray-200">
               {issue.description || 'No description provided.'}
             </p>
-          </div>
+          </section>
 
           {/* Metadata */}
-          <div className="mt-10 pt-6 border-t border-gray-200 text-sm text-gray-600">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <div className="font-medium text-gray-800">Reported by</div>
-                <div>{issue.reporterName || '—'}</div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-800">Created</div>
-                <div>{createdDate}</div>
-              </div>
-              {issue.assigneeId && (
-                <div>
-                  <div className="font-medium text-gray-800">Assigned to</div>
-                  <div className="text-blue-600">Assigned (ID: {issue.assigneeId.slice(0,8)}...)</div>
-                </div>
-              )}
-              {resolvedDate && (
-                <div>
-                  <div className="font-medium text-gray-800">Resolved on</div>
-                  <div>{resolvedDate}</div>
-                </div>
-              )}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 border-t border-gray-200 pt-8">
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Reported by</div>
+              <div className="text-gray-700">{issue.reporterName || '—'}</div>
             </div>
-          </div>
+
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Created</div>
+              <div className="text-gray-700">{createdDate}</div>
+            </div>
+
+            {resolvedDate && (
+              <div>
+                <div className="font-medium text-gray-800 mb-1">Resolved on</div>
+                <div className="text-gray-700">{resolvedDate}</div>
+              </div>
+            )}
+          </section>
+
+          {/* Assignees / Collaborators */}
+          <section>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Assigned To / Working On</h3>
+            {hasAssignees ? (
+              <div className="flex flex-wrap gap-3">
+                {issue.assignees.map((assignee, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 bg-blue-50 text-blue-800 rounded-full text-sm font-medium shadow-sm flex items-center gap-2"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold">
+                      {assignee.name[0].toUpperCase()}
+                    </div>
+                    {assignee.name}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
+                No one assigned yet
+              </p>
+            )}
+          </section>
         </div>
       </div>
 
-      <div className="mt-10 text-center text-gray-500 text-sm">
+      <div className="mt-12 text-center text-gray-500 text-sm italic">
         Comments section coming soon...
       </div>
     </div>

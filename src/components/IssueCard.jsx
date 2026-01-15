@@ -1,4 +1,3 @@
-// src/components/IssueCard.jsx
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -17,8 +16,8 @@ const categoryColors = {
 };
 
 export default function IssueCard({ issue }) {
-  const createdAt = issue.createdAt?.toDate 
-    ? issue.createdAt.toDate() 
+  const createdAt = issue.createdAt?.toDate
+    ? issue.createdAt.toDate()
     : new Date(issue.createdAt);
 
   return (
@@ -59,17 +58,30 @@ export default function IssueCard({ issue }) {
           {issue.description || 'No description provided'}
         </p>
 
+
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div>
             <span>By </span>
-            <span className="font-medium text-gray-700">
-              {issue.reporterName?.split(' ')[0] || 'Someone'}
-            </span>
+            <span className="font-medium text-gray-700">{issue.reporterName?.split(' ')[0] || 'Someone'}</span>
           </div>
 
-          <div>
-            {issue.assigneeId ? (
-              <span className="text-blue-600">Assigned</span>
+          <div className="flex items-center gap-1">
+            {issue.assignees?.length > 0 ? (
+              <>
+                <span className="text-blue-600">Assigned to:</span>
+                <div className="flex -space-x-2">
+                  {issue.assignees.slice(0, 3).map(a => (
+                    <div key={a.uid} className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-800">
+                      {a.name[0].toUpperCase()}
+                    </div>
+                  ))}
+                  {issue.assignees.length > 3 && (
+                    <div className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
+                      +{issue.assignees.length - 3}
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <span>Unassigned</span>
             )}
