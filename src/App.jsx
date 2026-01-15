@@ -9,10 +9,8 @@ import Login from './Pages/login';
 import Dashboard from './Pages/Dashboard';
 import NewIssue from './Pages/NewIssue';
 import IssueDetail from './Pages/IssueDetails';
-// import MyIssues from './pages/MyIssues';
-import Resolved from './pages/Resolved';
+import Resolved from './pages/Resolved.jsx';
 import InnovationRecords from './Pages/InnovationRecords';
-// import NewInnovation from './Pages/NewInnovation';
 import InnovationDetail from './Pages/InnovationDetail';
 
 function App() {
@@ -27,10 +25,8 @@ function App() {
             <Route path="/issues" element={<Dashboard />} />
             <Route path="/new" element={<NewIssue />} />
             <Route path="/issues/:id" element={<IssueDetail />} />
-            {/* <Route path="/my-issues" element={<MyIssues />} /> */}
             <Route path="/resolved" element={<Resolved />} />
             <Route path="/innovation-records" element={<InnovationRecords />} />
-            {/* <Route path="/innovation-records/new" element={<NewInnovation />} /> */}
             <Route path="/innovation-records/:id" element={<InnovationDetail />} />
           </Route>
 

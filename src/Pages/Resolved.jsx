@@ -1,9 +1,8 @@
-// src/pages/Resolved.jsx
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import IssueCard from '../components/IssueCard';
-import { EmptyState } from '../components/EmptyState'; // optional, from earlier suggestion
+import { EmptyState } from '../components/EmptyState';
 
 export default function Resolved() {
   const [issues, setIssues] = useState([]);
@@ -13,7 +12,7 @@ export default function Resolved() {
     const q = query(
       collection(db, 'issues'),
       where('status', '==', 'Resolved'),
-      orderBy('resolvedAt', 'desc') // will fallback to createdAt if no resolvedAt
+      orderBy('resolvedAt', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
