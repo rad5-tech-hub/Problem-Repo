@@ -9,7 +9,7 @@ import Login from './Pages/login';
 import Dashboard from './Pages/Dashboard';
 import NewIssue from './Pages/NewIssue';
 import IssueDetail from './Pages/IssueDetails';
-import Resolved from './pages/Resolved.jsx';
+import Resolved from '../../problem repo/src/Pages/Resolved';
 import InnovationRecords from './Pages/InnovationRecords';
 import InnovationDetail from './Pages/InnovationDetail';
 
