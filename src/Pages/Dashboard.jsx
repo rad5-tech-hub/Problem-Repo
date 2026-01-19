@@ -6,6 +6,7 @@ import IssueCard from '../components/IssueCard';
 import NewIssueModal from '../components/NewIssueModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useAuth } from '../context/authcontexts';
+import { format } from 'date-fns';
 const columns = [
   { id: 'Open', title: 'Open', color: 'border-yellow-400' },
   { id: 'In Progress', title: 'In Progress', color: 'border-blue-400' },
