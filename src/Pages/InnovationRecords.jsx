@@ -13,19 +13,23 @@ export default function InnovationRecords() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('active'); // 'active' or 'archived'
 
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const isAuthorized = isAuthorizedUser(user);
 
   useEffect(() => {
     const unsubscribe = getInnovationsWithListener((data) => {
-      setRecords(data);
+      // Client-side filter based on view mode
+      const filtered = viewMode === 'archived'
+        ? data.filter((r) => r.isArchived === true)
+        : data.filter((r) => r.isArchived !== true); // missing = active
+
+      setRecords(filtered);
       setLoading(false);
     });
     return unsubscribe;
-  }, []);
-
- 
+  }, [viewMode]);
 
   if (loading) {
     return (
@@ -46,28 +50,54 @@ export default function InnovationRecords() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      {/* Gradient Header with Conditional New Button */}
+      {/* Gradient Header with Tabs & New Button */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 mb-10 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold">Innovation Records</h1>
             <p className="mt-3 text-blue-100 text-lg">
-              Documented solutions that solved real problems
+              {viewMode === 'active' ? 'Active Innovations' : 'Archived Innovations'}
             </p>
           </div>
 
-          {/* Only show "New Innovation" button to authorized users */}
-          {isAuthorized && (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-8 py-4 bg-white hover:bg-gray-100 text-blue-700 font-medium rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Document Innovation
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* View Mode Tabs */}
+            <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
+              <button
+                onClick={() => setViewMode('active')}
+                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                  viewMode === 'active'
+                    ? 'bg-white shadow-md text-blue-700'
+                    : 'text-white hover:bg-white/20'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setViewMode('archived')}
+                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                  viewMode === 'archived'
+                    ? 'bg-white shadow-md text-blue-700'
+                    : 'text-white hover:bg-white/20'
+                }`}
+              >
+                Archived
+              </button>
+            </div>
+
+            {/* Only show "New Innovation" button to authorized users */}
+            {isAuthorized && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-8 py-4 bg-white hover:bg-gray-100 text-blue-700 font-medium rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Document Innovation
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -78,13 +108,16 @@ export default function InnovationRecords() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">No Innovations Yet</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            No {viewMode === 'active' ? 'Active' : 'Archived'} Innovations Yet
+          </h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Start documenting your team's breakthroughs and solutions here.
+            {viewMode === 'active'
+              ? 'Start documenting your team\'s breakthroughs and solutions here.'
+              : 'No archived innovations yet.'}
           </p>
 
-          {/* Only show button to authorized users */}
-          {isAuthorized && (
+          {isAuthorized && viewMode === 'active' && (
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg transition-all transform hover:scale-105"
@@ -98,9 +131,9 @@ export default function InnovationRecords() {
           {records.map((record) => (
             <div
               key={record.id}
-              className="group bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-hidden relative"
+              className="group bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-hidden"
             >
-              <Link to={`/innovation-records/${record.id}`} className="block p-6 pr-16">
+              <Link to={`/innovation-records/${record.id}`} className="block p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-700 transition-colors">
                   {record.title || record.problem || 'Untitled Innovation'}
                 </h3>
@@ -118,6 +151,11 @@ export default function InnovationRecords() {
                   {record.endDate && (
                     <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
                       Completed {format(record.endDate.toDate(), 'MMM d, yyyy')}
+                    </span>
+                  )}
+                  {record.isArchived && (
+                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                      Archived
                     </span>
                   )}
                 </div>
