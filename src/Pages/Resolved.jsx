@@ -7,20 +7,26 @@ import { EmptyState } from '../components/EmptyState';
 export default function Resolved() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const q = query(
       collection(db, 'issues'),
       where('status', '==', 'Resolved'),
-      orderBy('resolvedAt', 'desc')
+      // Use resolvedAt if exists, fallback to createdAt
+      orderBy('resolvedAt', 'desc') // This will still work once resolvedAt is set
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const resolvedIssues = snapshot.docs.map(doc => ({
+      const resolvedIssues = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-      setIssues(resolvedIssues);
+      // Optional: sort client-side as fallback (for old issues without resolvedAt)
+      const sorted = resolvedIssues.sort((a, b) => {
+        const aTime = a.resolvedAt?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+        const bTime = b.resolvedAt?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+        return bTime - aTime;
+      });
+      setIssues(sorted);
       setLoading(false);
     }, (err) => {
       console.error('Error loading resolved issues:', err);
@@ -50,7 +56,7 @@ export default function Resolved() {
           ))}
         </div>
       ) : issues.length === 0 ? (
-        <EmptyState 
+        <EmptyState
           title="No resolved issues yet"
           message="When issues get completed, they'll appear here"
         />

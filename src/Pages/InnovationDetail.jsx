@@ -1,7 +1,7 @@
 // src/pages/InnovationDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/authcontexts';
 import {
@@ -10,11 +10,14 @@ import {
   getCommentsWithListener
 } from '../lib/innovations';
 import { format } from 'date-fns';
+import useIsAuthorized  from '../hooks/useIsAuthorised';
 
 export default function InnovationDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const isAuthorized = useIsAuthorized();
 
   const [record, setRecord] = useState(null);
   const [comments, setComments] = useState([]);
@@ -24,6 +27,9 @@ export default function InnovationDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Archive confirmation modal state
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   useEffect(() => {
     const unsubRecord = onSnapshot(doc(db, 'innovations', id), (snap) => {
@@ -57,7 +63,7 @@ export default function InnovationDetail() {
 
       await updateSolutionWithHistory(id, solutionText, updater);
 
-      setSolutionText(''); // Clear input after save
+      setSolutionText('');
       alert('Solution updated successfully! Previous version saved in history.');
     } catch (err) {
       console.error('Update error:', err);
@@ -81,6 +87,26 @@ export default function InnovationDetail() {
       setNewComment('');
     } catch (err) {
       alert('Failed to post comment');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    setActionLoading(true);
+    try {
+      const ref = doc(db, 'innovations', id);
+      await updateDoc(ref, {
+        isArchived: true,
+        archivedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setShowArchiveConfirm(false);
+      navigate('/innovation-records');
+      alert('Innovation archived successfully');
+    } catch (err) {
+      console.error('Archive error:', err);
+      alert('Failed to archive innovation');
     } finally {
       setActionLoading(false);
     }
@@ -114,13 +140,34 @@ export default function InnovationDetail() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/innovation-records')}
-        className="mb-8 inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
-      >
-        ← Back to Innovation Records
-      </button>
+      {/* Top Bar with Back + Archive (Archive only for authorized) */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <button
+          onClick={() => navigate('/innovation-records')}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+        >
+          ← Back to Innovation Records
+        </button>
+
+        {isAuthorized && (
+          <button
+            onClick={() => setShowArchiveConfirm(true)}
+            disabled={actionLoading}
+            className="
+              px-6 py-2.5 bg-orange-600 hover:bg-orange-700 
+              text-white font-medium 
+              rounded-lg shadow-sm 
+              transition-colors disabled:opacity-60 
+              flex items-center gap-2
+            "
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            Archive
+          </button>
+        )}
+      </div>
 
       {/* Main Card */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -182,25 +229,31 @@ export default function InnovationDetail() {
               )}
             </div>
 
-            {/* Update Form */}
-            <div className="mt-8">
-              <textarea
-                value={solutionText}
-                onChange={(e) => setSolutionText(e.target.value)}
-                rows={5}
-                className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y transition-all"
-                placeholder="Propose an improvement or update the solution..."
-              />
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={handleUpdateSolution}
-                  disabled={actionLoading || !solutionText.trim()}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
-                >
-                  {actionLoading ? 'Saving...' : 'Save Improvement'}
-                </button>
+            {/* Conditional edit form */}
+            {isAuthorized ? (
+              <div className="mt-8">
+                <textarea
+                  value={solutionText}
+                  onChange={(e) => setSolutionText(e.target.value)}
+                  rows={5}
+                  className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y transition-all"
+                  placeholder="Propose an improvement or update the solution..."
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleUpdateSolution}
+                    disabled={actionLoading || !solutionText.trim()}
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+                  >
+                    {actionLoading ? 'Saving...' : 'Save Improvement'}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 italic text-center">
+                Only authorized team members can propose improvements or edit this solution.
+              </p>
+            )}
           </section>
 
           {/* Contributors */}
@@ -320,7 +373,7 @@ export default function InnovationDetail() {
               {record.solutionHistory?.length > 0 ? (
                 <div className="space-y-6">
                   {[...record.solutionHistory]
-                    .reverse() // Show newest first
+                    .reverse()
                     .map((entry, index) => (
                       <div
                         key={index}
@@ -351,6 +404,35 @@ export default function InnovationDetail() {
                 className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirmation Modal - only for authorized */}
+      {isAuthorized && showArchiveConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Archive Innovation?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to archive this innovation record? 
+              <br />
+              It will be hidden from the main list but can still be accessed later.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowArchiveConfirm(false)}
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={actionLoading}
+                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+              >
+                {actionLoading ? 'Archiving...' : 'Archive'}
               </button>
             </div>
           </div>
