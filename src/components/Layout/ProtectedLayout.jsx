@@ -43,7 +43,7 @@ export default function ProtectedLayout() {
           <h1 className="text-xl font-semibold text-gray-800">Problem Repo </h1>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-gray-600 hover:text-gray-900 focus:outline-none"
+            className="text-gray-600 hover:text-gray-900 focus:outline-none cursor-pointer"
           >
             <svg
               className="h-6 w-6"
@@ -126,7 +126,7 @@ export default function ProtectedLayout() {
 
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="w-full text-left cursor-pointer px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 Logout
               </button>
@@ -148,7 +148,7 @@ export default function ProtectedLayout() {
               </span>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-red-50 cursor-pointer text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
               >
                 Logout
               </button>

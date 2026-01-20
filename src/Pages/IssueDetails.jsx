@@ -147,7 +147,7 @@ export default function IssueDetail() {
         <p className="text-gray-600">{error || 'Issue not found'}</p>
         <button
           onClick={() => navigate('/issues')}
-          className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg transition-colors"
         >
           Back to Issues
         </button>
@@ -172,7 +172,7 @@ export default function IssueDetail() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <button
           onClick={() => navigate('/issues')}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 cursor-pointer px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
         >
           ← Back to Issues
         </button>
@@ -180,7 +180,7 @@ export default function IssueDetail() {
         <div className="flex flex-wrap gap-3 justify-end">
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -190,7 +190,7 @@ export default function IssueDetail() {
 
           <button
             onClick={() => setShowArchiveConfirm(true)}
-            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 cursor-pointer text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
@@ -233,7 +233,7 @@ export default function IssueDetail() {
                 className="
                   px-4 py-2.5 border border-gray-300 rounded-lg bg-white
                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                  disabled:opacity-60 min-w-[160px]
+                  disabled:opacity-60 cursor-pointer min-w-[160px]
                 "
               >
                 {statusOptions.map(status => (
@@ -308,7 +308,7 @@ export default function IssueDetail() {
                   className="
                     px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium
                     rounded-lg shadow-sm transition-all disabled:opacity-60
-                    flex items-center gap-2
+                    flex items-center cursor-pointer gap-2
                   "
                 >
                   {actionLoading ? (
@@ -335,7 +335,7 @@ export default function IssueDetail() {
                 <h2 className="text-2xl font-bold text-gray-900">Edit Issue</h2>
                 <button
                   onClick={() => setIsEditModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 cursor-pointer hover:text-gray-700 text-2xl"
                 >
                   ×
                 </button>
@@ -386,14 +386,14 @@ export default function IssueDetail() {
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
+                  className="px-6 py-3 bg-gray-200 cursor-pointer hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updating}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                  className="px-8 py-3 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-60"
                 >
                   {updating ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -414,14 +414,14 @@ export default function IssueDetail() {
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowArchiveConfirm(false)}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
+                className="px-6 py-3 bg-gray-200 cursor-pointer hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleArchive}
                 disabled={actionLoading}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white  cursor-pointer rounded-lg transition-colors disabled:opacity-60"
               >
                 {actionLoading ? 'Archiving...' : 'Archive'}
               </button>

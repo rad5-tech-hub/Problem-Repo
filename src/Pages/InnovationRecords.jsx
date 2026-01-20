@@ -65,7 +65,7 @@ export default function InnovationRecords() {
             <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
               <button
                 onClick={() => setViewMode('active')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                className={`px-6 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all min-w-[110px] ${
                   viewMode === 'active'
                     ? 'bg-white shadow-md text-blue-700'
                     : 'text-white hover:bg-white/20'
@@ -75,7 +75,7 @@ export default function InnovationRecords() {
               </button>
               <button
                 onClick={() => setViewMode('archived')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                className={`px-6 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all min-w-[110px] ${
                   viewMode === 'archived'
                     ? 'bg-white shadow-md text-blue-700'
                     : 'text-white hover:bg-white/20'
@@ -89,7 +89,7 @@ export default function InnovationRecords() {
             {isAuthorized && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-8 py-4 bg-white hover:bg-gray-100 text-blue-700 font-medium rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+                className="px-8 py-4 bg-white hover:bg-gray-100 cursor-pointer text-blue-700 font-medium rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -120,7 +120,7 @@ export default function InnovationRecords() {
           {isAuthorized && viewMode === 'active' && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg transition-all transform hover:scale-105"
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-medium rounded-xl shadow-lg transition-all transform hover:scale-105"
             >
               + Document First Innovation
             </button>

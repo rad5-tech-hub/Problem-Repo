@@ -49,7 +49,7 @@ export default function Login() {
      <button
   onClick={handleGoogleSignIn}
   disabled={loading}
-  className={`
+  className={`cursor-pointer
     w-full flex items-center justify-center gap-3
     bg-white border border-gray-300 hover:bg-gray-50
     text-gray-800 font-medium py-3 px-6 rounded-md

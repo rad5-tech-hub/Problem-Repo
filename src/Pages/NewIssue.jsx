@@ -137,7 +137,7 @@ export default function NewIssue() {
             rows={6}
             className="
               w-full px-4 py-3 border border-gray-300 rounded-md 
-              focus:ring-2 focus:ring-primary focus:border-primary 
+              focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer
               outline-none transition-all resize-y min-h-[120px]
             "
             placeholder="Provide more context, steps to reproduce, screenshots links, etc..."
@@ -150,7 +150,7 @@ export default function NewIssue() {
             type="button"
             onClick={() => navigate(-1)}
             className="
-              px-6 py-3 border border-gray-300 rounded-md 
+              px-6 py-3 border border-gray-300 rounded-md cursor-pointer
               text-gray-700 hover:bg-gray-50 transition-colors
               order-2 sm:order-1
             "

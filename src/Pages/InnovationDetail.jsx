@@ -127,7 +127,7 @@ export default function InnovationDetail() {
         <p className="text-gray-600 mb-8">{error || 'This record could not be found'}</p>
         <button
           onClick={() => navigate('/innovation-records')}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          className="px-8 py-3 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
         >
           Back to Innovation Records
         </button>
@@ -157,7 +157,7 @@ export default function InnovationDetail() {
               px-6 py-2.5 bg-orange-600 hover:bg-orange-700 
               text-white font-medium 
               rounded-lg shadow-sm 
-              transition-colors disabled:opacity-60 
+              transition-colors disabled:opacity-60 cursor-pointer 
               flex items-center gap-2
             "
           >
@@ -197,7 +197,7 @@ export default function InnovationDetail() {
               {hasHistory && (
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
+                  className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer font-medium underline"
                 >
                   View History ({record.solutionHistory.length} versions)
                 </button>
@@ -243,7 +243,7 @@ export default function InnovationDetail() {
                   <button
                     onClick={handleUpdateSolution}
                     disabled={actionLoading || !solutionText.trim()}
-                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-medium rounded-lg transition-colors disabled:opacity-60"
                   >
                     {actionLoading ? 'Saving...' : 'Save Improvement'}
                   </button>
@@ -343,7 +343,7 @@ export default function InnovationDetail() {
                 <button
                   type="submit"
                   disabled={actionLoading || !newComment.trim()}
-                  className="px-8 py-3 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+                  className="px-8 py-3 bg-gray-800 hover:bg-gray-900 cursor-pointer text-white font-medium rounded-lg transition-colors disabled:opacity-60"
                 >
                   {actionLoading ? 'Posting...' : 'Post Comment'}
                 </button>
@@ -362,7 +362,7 @@ export default function InnovationDetail() {
                 <h2 className="text-2xl font-bold text-gray-900">Solution Version History</h2>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-light"
+                  className="text-gray-500 hover:text-gray-700 cursor-pointer text-2xl font-light"
                 >
                   ×
                 </button>
@@ -401,7 +401,7 @@ export default function InnovationDetail() {
             <div className="p-6 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer text-gray-800 font-medium rounded-lg transition-colors"
               >
                 Close
               </button>
@@ -423,14 +423,14 @@ export default function InnovationDetail() {
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowArchiveConfirm(false)}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer text-gray-800 font-medium rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleArchive}
                 disabled={actionLoading}
-                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 cursor-pointer text-white font-medium rounded-lg transition-colors disabled:opacity-60"
               >
                 {actionLoading ? 'Archiving...' : 'Archive'}
               </button>

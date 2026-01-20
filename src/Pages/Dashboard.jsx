@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import IssueCard from '../components/IssueCard';
 import NewIssueModal from '../components/NewIssueModal';
@@ -144,9 +144,9 @@ export default function Dashboard() {
             <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 shadow-sm">
               <button
                 onClick={() => setViewMode('active')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                className={`px-6 py-2.5 text-sm font-medium cursor-pointer rounded-lg transition-all min-w-[110px] ${
                   viewMode === 'active'
-                    ? 'bg-white shadow-md text-blue-700 border border-blue-200'
+                    ? 'bg-white shadow-md text-blue-700 border cursor-pointer border-blue-200'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -154,9 +154,9 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => setViewMode('archived')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[110px] ${
+                className={`px-6 py-2.5 text-sm font-medium cursor-pointer rounded-lg transition-all min-w-[110px] ${
                   viewMode === 'archived'
-                    ? 'bg-white shadow-md text-blue-700 border border-blue-200'
+                    ? 'bg-white shadow-md text-blue-700 border cursor-pointer border-blue-200'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -171,6 +171,7 @@ export default function Dashboard() {
                 text-white font-medium 
                 rounded-lg shadow-md 
                 transition-all duration-200 
+cursor-pointer
                 flex items-center gap-2 
                 min-w-[140px] justify-center
               "
@@ -269,7 +270,7 @@ export default function Dashboard() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3 cursor-pointer">
                       <button
                         onClick={async () => {
                           if (!window.confirm('Unarchive this issue?')) return;
@@ -297,7 +298,7 @@ export default function Dashboard() {
                             alert('Failed to delete');
                           }
                         }}
-                        className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors min-w-[120px] text-center shadow-sm"
+                        className="px-6 py-2.5 bg-red-600 cursor-pointer hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors min-w-[120px] text-center shadow-sm"
                       >
                         Delete
                       </button>
@@ -327,7 +328,7 @@ export default function Dashboard() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowPermissionModal(false)}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer text-gray-800 font-medium rounded-lg transition-colors"
               >
                 Got it
               </button>
