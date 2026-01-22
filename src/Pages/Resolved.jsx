@@ -1,31 +1,50 @@
+// src/pages/Resolved.jsx
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import IssueCard from '../components/IssueCard';
 import { EmptyState } from '../components/EmptyState';
+import { notifyCardMoved } from '../lib/slack';
 
 export default function Resolved() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [prevIssuesMap, setPrevIssuesMap] = useState(new Map());
+
   useEffect(() => {
     const q = query(
       collection(db, 'issues'),
       where('status', '==', 'Resolved'),
-      // Use resolvedAt if exists, fallback to createdAt
-      orderBy('resolvedAt', 'desc') // This will still work once resolvedAt is set
-    );
+      orderBy('resolvedAt', 'desc') );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const resolvedIssues = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      // Optional: sort client-side as fallback (for old issues without resolvedAt)
+
       const sorted = resolvedIssues.sort((a, b) => {
         const aTime = a.resolvedAt?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
         const bTime = b.resolvedAt?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
         return bTime - aTime;
       });
+
+      sorted.forEach((issue) => {
+        const prevIssue = prevIssuesMap.get(issue.id);
+        if (!prevIssue || prevIssue.status !== 'Resolved') {
+          const userName = issue.updatedBy?.name || issue.reporterName || 'Someone';
+          notifyCardMoved(
+            userName,
+            issue.title || 'Untitled Issue',
+            prevIssue?.status || 'Unknown',
+            'Resolved'
+          );
+        }
+      });
+
+      const newMap = new Map(sorted.map((issue) => [issue.id, issue]));
+      setPrevIssuesMap(newMap);
+
       setIssues(sorted);
       setLoading(false);
     }, (err) => {
@@ -62,7 +81,7 @@ export default function Resolved() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {issues.map(issue => (
+          {issues.map((issue) => (
             <IssueCard key={issue.id} issue={issue} />
           ))}
         </div>

@@ -1,4 +1,3 @@
-// Reusable Custom Alert Modal
 const CustomAlertModal = ({ isOpen, onClose, title, message, type = 'error' }) => {
   if (!isOpen) return null;
 

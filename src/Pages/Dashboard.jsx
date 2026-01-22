@@ -7,6 +7,8 @@ import NewIssueModal from '../components/NewIssueModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useAuth } from '../context/authcontexts';
 import { format } from 'date-fns';
+import { notifyCardMoved, notifyIssueCreated, notifyUnarchived, notifyDeleted } from '../lib/slack';
+
 const columns = [
   { id: 'Open', title: 'Open', color: 'border-yellow-400' },
   { id: 'In Progress', title: 'In Progress', color: 'border-blue-400' },
@@ -18,30 +20,25 @@ export default function Dashboard() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isNewIssueModalOpen, setIsNewIssueModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('active'); // 'active' or 'archived'
+  const [viewMode, setViewMode] = useState('active'); 
   const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allIssues = snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data(),
       }));
-
-      // Client-side filter for active/archived
       const filtered = viewMode === 'archived'
         ? allIssues.filter((i) => i.isArchived === true)
         : allIssues.filter((i) => i.isArchived !== true);
-
       setIssues(filtered);
       setLoading(false);
     }, (err) => {
       console.error('Error fetching issues:', err);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [viewMode]);
 
@@ -49,76 +46,64 @@ export default function Dashboard() {
     issues.filter((issue) => issue.status === status);
 
   const canDragIssue = (issue) => {
-    // Allow drag if: user is reporter OR is in assignees
     return (
       issue.reporterId === user?.uid ||
       issue.assignees?.some((a) => a.uid === user?.uid)
     );
   };
 
- const onDragEnd = async (result) => {
-  if (viewMode !== 'active') return;
-
-  const { destination, source, draggableId } = result;
-
-  // Dropped outside any column
-  if (!destination) return;
-
-  // Dropped in the same position (no change)
-  if (
-    destination.droppableId === source.droppableId &&
-    destination.index === source.index
-  ) {
-    return;
-  }
-
-  // Find the issue being dragged
-  const draggedIssue = issues.find((i) => i.id === draggableId);
-
-  if (!draggedIssue) return;
-
-  // Permission check: only reporter or assigned users can drag
-  if (!canDragIssue(draggedIssue)) {
-    setShowPermissionModal(true);
-    return;
-  }
-
-  const newStatus = destination.droppableId;
-  setIssues((prev) =>
-    prev.map((issue) =>
-      issue.id === draggableId ? { ...issue, status: newStatus } : issue
-    )
-  );
-
-  try {
-    const issueRef = doc(db, 'issues', draggableId);
-
-    const updateData = {
-      status: newStatus,
-      updatedAt: serverTimestamp(),
-    };
-
-    if (newStatus === 'Resolved') {
-      updateData.resolvedAt = serverTimestamp();
+  const onDragEnd = async (result) => {
+    if (viewMode !== 'active') return;
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
     }
-
-    await updateDoc(issueRef, updateData);
-
-    setTimeout(() => {
-      setIssues((prev) => [...prev]); 
-    }, 300);
-  } catch (error) {
-    console.error('Failed to update issue status:', error);
-
+    const draggedIssue = issues.find((i) => i.id === draggableId);
+    if (!draggedIssue) return;
+    if (!canDragIssue(draggedIssue)) {
+      setShowPermissionModal(true);
+      return;
+    }
+    const newStatus = destination.droppableId;
     setIssues((prev) =>
       prev.map((issue) =>
-        issue.id === draggableId ? { ...issue, status: source.droppableId } : issue
+        issue.id === draggableId ? { ...issue, status: newStatus } : issue
       )
     );
+    try {
+      const issueRef = doc(db, 'issues', draggableId);
+      const updateData = {
+        status: newStatus,
+        updatedAt: serverTimestamp(),
+      };
+      if (newStatus === 'Resolved') {
+        updateData.resolvedAt = serverTimestamp();
+      }
+      await updateDoc(issueRef, updateData);
+      notifyCardMoved(
+        user.displayName || user.email.split('@')[0] || 'Anonymous',
+        draggedIssue.title || 'Untitled Issue',
+        source.droppableId,
+        newStatus
+      );
 
-    alert('Failed to move issue. Please try again.');
-  }
-};
+      setTimeout(() => {
+        setIssues((prev) => [...prev]);
+      }, 300);
+    } catch (error) {
+      console.error('Failed to update issue status:', error);
+      setIssues((prev) =>
+        prev.map((issue) =>
+          issue.id === draggableId ? { ...issue, status: source.droppableId } : issue
+        )
+      );
+      alert('Failed to move issue. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -139,7 +124,6 @@ export default function Dashboard() {
               {viewMode === 'active' ? 'Active Issues' : 'Archived Issues'}
             </p>
           </div>
-
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 shadow-sm">
               <button
@@ -163,16 +147,15 @@ export default function Dashboard() {
                 Archived
               </button>
             </div>
-
             <button
               onClick={() => setIsNewIssueModalOpen(true)}
               className="
-                px-6 py-2.5 bg-blue-600 hover:bg-blue-700 
-                text-white font-medium 
-                rounded-lg shadow-md 
-                transition-all duration-200 
-cursor-pointer
-                flex items-center gap-2 
+                px-6 py-2.5 bg-blue-600 hover:bg-blue-700
+                text-white font-medium
+                rounded-lg shadow-md
+                transition-all duration-200
+                cursor-pointer
+                flex items-center gap-2
                 min-w-[140px] justify-center
               "
             >
@@ -240,7 +223,7 @@ cursor-pointer
           </div>
         </DragDropContext>
       ) : (
-        // Archived View (unchanged for brevity - already working)
+        // Archived View (updated with Slack notifications)
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Archived Issues</h2>
           {issues.length === 0 ? (
@@ -269,7 +252,6 @@ cursor-pointer
                         {issue.description?.substring(0, 150) || 'No description'}...
                       </p>
                     </div>
-
                     <div className="flex flex-col sm:flex-row gap-3 cursor-pointer">
                       <button
                         onClick={async () => {
@@ -280,6 +262,13 @@ cursor-pointer
                               archivedAt: null,
                               updatedAt: serverTimestamp(),
                             });
+
+                            // Send Slack notification after successful unarchive
+                            notifyUnarchived(
+                              user.displayName || user.email.split('@')[0] || 'Anonymous',
+                              issue.title || 'Untitled Issue',
+                              'issue'
+                            );
                           } catch (err) {
                             alert('Failed to unarchive');
                           }
@@ -288,12 +277,18 @@ cursor-pointer
                       >
                         Unarchive
                       </button>
-
                       <button
                         onClick={async () => {
                           if (!window.confirm('Permanently delete this issue? This cannot be undone.')) return;
                           try {
                             await deleteDoc(doc(db, 'issues', issue.id));
+
+                            // Send Slack notification after successful delete
+                            notifyDeleted(
+                              user.displayName || user.email.split('@')[0] || 'Anonymous',
+                              issue.title || 'Untitled Issue',
+                              'issue'
+                            );
                           } catch (err) {
                             alert('Failed to delete');
                           }

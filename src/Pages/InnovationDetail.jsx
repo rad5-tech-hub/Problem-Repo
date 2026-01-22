@@ -10,15 +10,16 @@ import {
   getCommentsWithListener
 } from '../lib/innovations';
 import { format } from 'date-fns';
-import useIsAuthorized  from '../hooks/useIsAuthorised';
+import useIsAuthorized from '../hooks/useIsAuthorised';
+
+// Import Slack notification helpers (only new lines)
+import { notifySolutionUpdated, notifyCommentAdded, notifyArchived } from '../lib/slack';
 
 export default function InnovationDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const isAuthorized = useIsAuthorized();
-
   const [record, setRecord] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -27,7 +28,6 @@ export default function InnovationDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-
   // Archive confirmation modal state
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
@@ -42,9 +42,7 @@ export default function InnovationDetail() {
       }
       setLoading(false);
     });
-
     const unsubComments = getCommentsWithListener(id, setComments);
-
     return () => {
       unsubRecord();
       unsubComments();
@@ -53,15 +51,19 @@ export default function InnovationDetail() {
 
   const handleUpdateSolution = async () => {
     if (!solutionText.trim()) return alert('Please enter a solution');
-
     setActionLoading(true);
     try {
       const updater = {
         uid: user.uid,
         name: user.displayName || user.email.split('@')[0] || 'Anonymous'
       };
-
       await updateSolutionWithHistory(id, solutionText, updater);
+
+      // Send Slack notification after successful update (only new line)
+      notifySolutionUpdated(
+        user.displayName || user.email.split('@')[0] || 'Anonymous',
+        record.title || record.problem || 'Untitled Innovation'
+      );
 
       setSolutionText('');
       alert('Solution updated successfully! Previous version saved in history.');
@@ -76,7 +78,6 @@ export default function InnovationDetail() {
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-
     setActionLoading(true);
     try {
       await addComment(id, {
@@ -84,6 +85,14 @@ export default function InnovationDetail() {
         userId: user.uid,
         userName: user.displayName || user.email,
       });
+
+      // Send Slack notification after successful comment (only new line)
+      notifyCommentAdded(
+        user.displayName || user.email.split('@')[0] || 'Anonymous',
+        record.title || record.problem || 'Untitled Innovation',
+        newComment
+      );
+
       setNewComment('');
     } catch (err) {
       alert('Failed to post comment');
@@ -101,6 +110,14 @@ export default function InnovationDetail() {
         archivedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      // Send Slack notification after successful archive (only new line)
+      notifyArchived(
+        user.displayName || user.email.split('@')[0] || 'Anonymous',
+        record.title || record.problem || 'Untitled Innovation',
+        'innovation'
+      );
+
       setShowArchiveConfirm(false);
       navigate('/innovation-records');
       alert('Innovation archived successfully');
@@ -154,10 +171,10 @@ export default function InnovationDetail() {
             onClick={() => setShowArchiveConfirm(true)}
             disabled={actionLoading}
             className="
-              px-6 py-2.5 bg-orange-600 hover:bg-orange-700 
-              text-white font-medium 
-              rounded-lg shadow-sm 
-              transition-colors disabled:opacity-60 cursor-pointer 
+              px-6 py-2.5 bg-orange-600 hover:bg-orange-700
+              text-white font-medium
+              rounded-lg shadow-sm
+              transition-colors disabled:opacity-60 cursor-pointer
               flex items-center gap-2
             "
           >

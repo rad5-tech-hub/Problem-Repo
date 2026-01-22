@@ -1,22 +1,21 @@
-// src/components/NewIssueModal.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authcontexts';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+import { notifyIssueCreated } from '../lib/slack';
+
 const categories = ['Academy', 'Management', 'Hub', 'External', 'Other'];
 
 export default function NewIssueModal({ isOpen, onClose }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: 'Other',
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,10 +32,8 @@ export default function NewIssueModal({ isOpen, onClose }) {
       setError('Title is required');
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
       const issueData = {
         title: formData.title.trim(),
@@ -49,12 +46,16 @@ export default function NewIssueModal({ isOpen, onClose }) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
-
       const docRef = await addDoc(collection(db, 'issues'), issueData);
 
-      onClose(); // Close modal on success
-      navigate('/issues', { replace: true }); // Redirect to issues list
-      // Optional: navigate(`/issues/${docRef.id}`) to go to the new issue detail
+      notifyIssueCreated(
+        user.displayName || user.email.split('@')[0] || 'Anonymous',
+        formData.title.trim(),
+        formData.category
+      );
+
+      onClose();
+      navigate('/issues', { replace: true }); 
     } catch (err) {
       console.error('Error creating issue:', err);
       setError('Failed to create issue. Please try again.');
@@ -83,14 +84,12 @@ export default function NewIssueModal({ isOpen, onClose }) {
             </button>
           </div>
         </div>
-
         {/* Error */}
         {error && (
           <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
             {error}
           </div>
         )}
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Title */}
@@ -109,7 +108,6 @@ export default function NewIssueModal({ isOpen, onClose }) {
               placeholder="Short, clear description of the issue"
             />
           </div>
-
           {/* Category */}
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
@@ -129,7 +127,6 @@ export default function NewIssueModal({ isOpen, onClose }) {
               ))}
             </select>
           </div>
-
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
@@ -145,7 +142,6 @@ export default function NewIssueModal({ isOpen, onClose }) {
               placeholder="Provide more context, steps to reproduce, screenshots links, etc..."
             />
           </div>
-
           {/* Actions */}
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
             <button

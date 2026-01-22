@@ -1,4 +1,3 @@
-// src/lib/innovations.js
 import {
   collection,
   addDoc,
@@ -13,17 +12,13 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-
-// === Create a new innovation record ===
 export async function createInnovation(data) {
   try {
     const docRef = await addDoc(collection(db, 'innovations'), {
       ...data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      // Default status - can be overridden by passed data
       status: data.status || 'Completed',
-      // Do NOT force empty arrays here - let the caller provide them
     });
     return docRef;
   } catch (error) {
@@ -32,7 +27,6 @@ export async function createInnovation(data) {
   }
 }
 
-// === Real-time listener for all innovations ===
 export function getInnovationsWithListener(callback, errorCallback = console.error) {
   const q = query(collection(db, 'innovations'), orderBy('createdAt', 'desc'));
 
@@ -52,7 +46,6 @@ export function getInnovationsWithListener(callback, errorCallback = console.err
   );
 }
 
-// === Get a single innovation (one-time fetch) ===
 export async function getInnovation(id) {
   const ref = doc(db, 'innovations', id);
   const snap = await getDoc(ref);
@@ -62,7 +55,6 @@ export async function getInnovation(id) {
   return null;
 }
 
-// === Update any fields of an innovation ===
 export async function updateInnovation(id, data) {
   const ref = doc(db, 'innovations', id);
   try {
@@ -76,7 +68,6 @@ export async function updateInnovation(id, data) {
   }
 }
 
-// === Specialized: Update solution with history ==
 export async function updateSolutionWithHistory(id, newText, updater) {
   const ref = doc(db, 'innovations', id);
 
@@ -86,8 +77,7 @@ export async function updateSolutionWithHistory(id, newText, updater) {
       uid: updater.uid,
       name: updater.name,
     },
-    updatedAt: new Date(), // ← client-side timestamp (very accurate in practice)
-  };
+    updatedAt: new Date(),   };
 
   try {
     await updateDoc(ref, {
