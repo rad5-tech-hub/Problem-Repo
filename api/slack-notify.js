@@ -1,10 +1,11 @@
 export default async function handler(req, res) {
-  // Only allow POST requests
+console.log('API /slack-notify called');
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { action, userName, details } = req.body;
+console.log('Payload received:', { action, userName, details });
 
   // Basic validation
   if (!action || !userName) {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   const webhookUrl = import.meta.env.SLACK_WEBHOOK_URL;
-
+console.log('Webhook URL exists?', !!webhookUrl);
   if (!webhookUrl) {
     console.error('SLACK_WEBHOOK_URL is not set in environment variables');
     return res.status(500).json({ error: 'Server configuration error' });
