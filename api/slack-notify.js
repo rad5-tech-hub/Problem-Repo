@@ -1,44 +1,53 @@
 // api/slack-notify.js
 export default async function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json');
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+	res.setHeader('Access-Control-Allow-Origin', 'https://problem-repo-euxf.vercel.app/');        
+	res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+	res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  try {
-    const { action, userName, details = '' } = req.body || {};
+	// Handle preflight OPTIONS request
+	if (req.method === 'OPTIONS') {
+		return res.status(200).end();
+	}
+	res.setHeader('Content-Type', 'application/json');
 
-    if (!action || !userName) {
-      return res.status(400).json({ error: 'Missing action or userName' });
-    }
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
 
-    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+	try {
+		const { action, userName, details = '' } = req.body || {};
 
-    if (!webhookUrl) {
-      console.error('Missing SLACK_WEBHOOK_URL');
-      return res.status(500).json({ error: 'Missing webhook configuration' });
-    }
+		if (!action || !userName) {
+			return res.status(400).json({ error: 'Missing action or userName' });
+		}
 
-    const message = {
-      text: `*${userName}* tested manual notification\n${details || 'No details'}\n→ ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' })} WAT`
-    };
+		const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    });
+		if (!webhookUrl) {
+			console.error('Missing SLACK_WEBHOOK_URL');
+			return res.status(500).json({ error: 'Missing webhook configuration' });
+		}
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Slack error:', response.status, errorText);
-      return res.status(500).json({ error: `Slack failed: ${response.status}` });
-    }
+		const message = {
+			text: `*${userName}* tested manual notification\n${details || 'No details'}\n→ ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' })} WAT`
+		};
 
-    return res.status(200).json({ success: true, message: 'Test sent' });
-  } catch (error) {
-    console.error('Handler error:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+		const response = await fetch(webhookUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(message),
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			console.error('Slack error:', response.status, errorText);
+			return res.status(500).json({ error: `Slack failed: ${response.status}` });
+		}
+
+		return res.status(200).json({ success: true, message: 'Test sent' });
+	} catch (error) {
+		console.error('Handler error:', error.message);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
 }
