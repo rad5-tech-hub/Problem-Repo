@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getInnovationsWithListener } from '../lib/innovations';
-// import { db } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { format } from 'date-fns';
 import NewInnovationModal from '../components/NewInnovationModal';
 import { useAuth } from '../context/authcontexts';
@@ -50,24 +50,25 @@ export default function InnovationRecords() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      {/* Gradient Header with Tabs & New Button */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 mb-10 text-white">
+      {/* Gradient Header with improved button group */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-6 sm:p-8 mb-10 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold">Innovation Records</h1>
-            <p className="mt-3 text-blue-100 text-lg">
+            <p className="mt-2 text-blue-100 text-base sm:text-lg">
               {viewMode === 'active' ? 'Active Innovations' : 'Archived Innovations'}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            {/* View Mode Tabs */}
-            <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
+          {/* Improved, symmetric, responsive button group */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-4">
+            {/* View Mode Tabs - better spacing & symmetry */}
+            <div className="inline-flex rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm p-1 shadow-inner">
               <button
                 onClick={() => setViewMode('active')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all min-w-[110px] ${
+                className={`px-5 sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[90px] sm:min-w-[110px] ${
                   viewMode === 'active'
-                    ? 'bg-white shadow-md text-blue-700'
+                    ? 'bg-white shadow-md text-blue-700 border border-white/40'
                     : 'text-white hover:bg-white/20'
                 }`}
               >
@@ -75,9 +76,9 @@ export default function InnovationRecords() {
               </button>
               <button
                 onClick={() => setViewMode('archived')}
-                className={`px-6 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all min-w-[110px] ${
+                className={`px-5 sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-all min-w-[90px] sm:min-w-[110px] ${
                   viewMode === 'archived'
-                    ? 'bg-white shadow-md text-blue-700'
+                    ? 'bg-white shadow-md text-blue-700 border border-white/40'
                     : 'text-white hover:bg-white/20'
                 }`}
               >
@@ -85,11 +86,19 @@ export default function InnovationRecords() {
               </button>
             </div>
 
-            {/* Only show "New Innovation" button to authorized users */}
+            {/* New Innovation Button - only authorized, aligned perfectly */}
             {isAuthorized && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-8 py-4 bg-white hover:bg-gray-100 cursor-pointer text-blue-700 font-medium rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+                className="
+                  px-6 sm:px-8 py-3 sm:py-4 bg-white hover:bg-gray-100 
+                  text-blue-700 font-medium 
+                  rounded-xl shadow-lg 
+                  transition-all duration-300 
+                  flex items-center gap-2 
+                  min-w-[160px] sm:min-w-[180px] justify-center
+                  hover:scale-105 active:scale-100
+                "
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -120,7 +129,7 @@ export default function InnovationRecords() {
           {isAuthorized && viewMode === 'active' && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-medium rounded-xl shadow-lg transition-all transform hover:scale-105"
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg transition-all transform hover:scale-105"
             >
               + Document First Innovation
             </button>

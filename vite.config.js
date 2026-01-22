@@ -9,15 +9,26 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
-      devOptions: {
-        enabled: true
+      registerType: 'autoUpdate',
+
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [
+          /^\/api/,
+          /^\/__/,
+          /^\/_/,
+          /^\/@vite/,
+          /firebase\.io$/,
+          /\.firestore\.googleapis\.com/,
+          /\.googleapis\.com/,
+        ],
+        cleanupOutdatedCaches: true,
       },
 
-
-      injectRegister: 'script',
-
-      // Web App Manifest
       manifest: {
         name: 'Problem Repo',
         short_name: 'Problem Repo',
@@ -49,24 +60,12 @@ export default defineConfig({
         ]
       },
 
-      // Workbox configuration (service worker behavior)
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-
-        navigateFallback: '/index.html',
-
-        navigateFallbackDenylist: [
-          /^\/api/,
-          /^\/__/,
-          /^\/_/,
-          /^\/@vite/,
-          /firebase\.io$/,
-          /\.firestore\.googleapis\.com/,
-          /\.googleapis\.com/,
-        ],
+      devOptions: {
+        enabled: true
       },
-      appleTouchIcon: true,
+      injectRegister: 'script',
 
+      appleTouchIcon: true,
       splashScreen: true,
     })
   ]
