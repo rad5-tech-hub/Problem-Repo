@@ -11,9 +11,32 @@ import {
 } from '../lib/innovations';
 import { format } from 'date-fns';
 import useIsAuthorized from '../hooks/useIsAuthorised';
-
 // Import Slack notification helpers (only new lines)
 import { notifySolutionUpdated, notifyCommentAdded, notifyArchived } from '../lib/slack';
+
+const calculateDuration = (start, end) => {
+  if (!start || !end) return 'Ongoing';
+
+  let startDate;
+  let endDate;
+
+  if (start?.toDate) startDate = start.toDate();
+  else startDate = new Date(start);
+
+  if (end?.toDate) endDate = end.toDate();
+  else endDate = new Date(end);
+
+  if (isNaN(startDate) || isNaN(endDate)) return 'Invalid dates';
+
+  const diffMs = endDate - startDate;
+  if (diffMs < 0) return 'End date is before start date';
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days === 0) return 'Same day';
+  if (days === 1) return '1 day';
+  return `${days} days`;
+};
 
 export default function InnovationDetail() {
   const { id } = useParams();
@@ -31,6 +54,11 @@ export default function InnovationDetail() {
   // Archive confirmation modal state
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
+  // New states for completion date feature
+  const [endDateInput, setEndDateInput] = useState('');
+  const [showDateConfirm, setShowDateConfirm] = useState(false);
+  const [dateError, setDateError] = useState(null);
+
   useEffect(() => {
     const unsubRecord = onSnapshot(doc(db, 'innovations', id), (snap) => {
       if (snap.exists()) {
@@ -42,6 +70,7 @@ export default function InnovationDetail() {
       }
       setLoading(false);
     });
+
     const unsubComments = getCommentsWithListener(id, setComments);
     return () => {
       unsubRecord();
@@ -58,13 +87,11 @@ export default function InnovationDetail() {
         name: user.displayName || user.email.split('@')[0] || 'Anonymous'
       };
       await updateSolutionWithHistory(id, solutionText, updater);
-
       // Send Slack notification after successful update (only new line)
       notifySolutionUpdated(
         user.displayName || user.email.split('@')[0] || 'Anonymous',
         record.title || record.problem || 'Untitled Innovation'
       );
-
       setSolutionText('');
       alert('Solution updated successfully! Previous version saved in history.');
     } catch (err) {
@@ -85,14 +112,12 @@ export default function InnovationDetail() {
         userId: user.uid,
         userName: user.displayName || user.email,
       });
-
       // Send Slack notification after successful comment (only new line)
       notifyCommentAdded(
         user.displayName || user.email.split('@')[0] || 'Anonymous',
         record.title || record.problem || 'Untitled Innovation',
         newComment
       );
-
       setNewComment('');
     } catch (err) {
       alert('Failed to post comment');
@@ -110,20 +135,55 @@ export default function InnovationDetail() {
         archivedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-
       // Send Slack notification after successful archive (only new line)
       notifyArchived(
         user.displayName || user.email.split('@')[0] || 'Anonymous',
         record.title || record.problem || 'Untitled Innovation',
         'innovation'
       );
-
       setShowArchiveConfirm(false);
       navigate('/innovation-records');
       alert('Innovation archived successfully');
     } catch (err) {
       console.error('Archive error:', err);
       alert('Failed to archive innovation');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSetEndDate = async () => {
+    if (!endDateInput) {
+      setDateError('Please select a completion date');
+      return;
+    }
+
+    const selectedDate = new Date(endDateInput);
+    const startDate = record.startDate?.toDate ? record.startDate.toDate() : new Date(record.startDate);
+
+    if (startDate && selectedDate < startDate) {
+      setDateError('Completion date cannot be earlier than start date');
+      return;
+    }
+
+    setShowDateConfirm(true);
+  };
+
+  const confirmSetEndDate = async () => {
+    setActionLoading(true);
+    try {
+      const ref = doc(db, 'innovations', id);
+      await updateDoc(ref, {
+        endDate: new Date(endDateInput),
+        updatedAt: serverTimestamp(),
+      });
+      setEndDateInput('');
+      setShowDateConfirm(false);
+      setDateError(null);
+      alert('Completion date updated successfully');
+    } catch (err) {
+      console.error('Error updating end date:', err);
+      alert('Failed to update completion date');
     } finally {
       setActionLoading(false);
     }
@@ -165,7 +225,6 @@ export default function InnovationDetail() {
         >
           ← Back to Innovation Records
         </button>
-
         {isAuthorized && (
           <button
             onClick={() => setShowArchiveConfirm(true)}
@@ -220,18 +279,15 @@ export default function InnovationDetail() {
                 </button>
               )}
             </div>
-
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
               <p className="text-gray-800 leading-relaxed whitespace-pre-wrap min-h-[120px]">
                 {record.currentSolution || 'No solution documented yet.'}
               </p>
-
               {record.solver?.name && (
                 <p className="mt-6 text-sm text-gray-600">
                   Last updated by <span className="font-medium">{record.solver.name}</span>
                 </p>
               )}
-
               {hasLink && (
                 <div className="mt-6">
                   <a
@@ -299,8 +355,8 @@ export default function InnovationDetail() {
             )}
           </section>
 
-          {/* Timeline */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          {/* Timeline + Duration */}
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Started</h3>
               <p className="text-gray-700">
@@ -309,6 +365,7 @@ export default function InnovationDetail() {
                   : 'Not specified'}
               </p>
             </div>
+
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Completed</h3>
               <p className="text-gray-700">
@@ -317,12 +374,66 @@ export default function InnovationDetail() {
                   : 'Still active / ongoing'}
               </p>
             </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Duration</h3>
+              <p className="text-gray-700 font-medium">
+                {calculateDuration(record.startDate, record.endDate)}
+              </p>
+            </div>
           </section>
+
+          {/* Set Completion Date - Authorized users only */}
+          {isAuthorized && (
+            <section className="mt-10">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Set Completion Date</h2>
+
+              {record.endDate ? (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                  <p className="text-green-800">
+                    Marked as completed on{' '}
+                    <strong>{format(record.endDate.toDate(), 'MMMM d, yyyy')}</strong>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Completion Date
+                    </label>
+                    <input
+                      type="date"
+                      value={endDateInput}
+                      onChange={(e) => {
+                        setEndDateInput(e.target.value);
+                        setDateError(null);
+                      }}
+                      min={record.startDate?.toDate?.()
+                        ? record.startDate.toDate().toISOString().split('T')[0]
+                        : undefined}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {dateError && <p className="text-red-600 text-sm">{dateError}</p>}
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSetEndDate}
+                      disabled={actionLoading || !endDateInput}
+                      className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-60 cursor-pointer"
+                    >
+                      Set Completion Date
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Comments & Improvements */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Comments & Improvements</h2>
-
             {comments.length === 0 ? (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
                 <p className="text-gray-500 italic text-lg">
@@ -347,7 +458,6 @@ export default function InnovationDetail() {
                 ))}
               </div>
             )}
-
             <form onSubmit={handleAddComment} className="mt-10">
               <textarea
                 value={newComment}
@@ -385,7 +495,6 @@ export default function InnovationDetail() {
                 </button>
               </div>
             </div>
-
             <div className="p-6 space-y-8">
               {record.solutionHistory?.length > 0 ? (
                 <div className="space-y-6">
@@ -414,7 +523,6 @@ export default function InnovationDetail() {
                 </p>
               )}
             </div>
-
             <div className="p-6 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowHistoryModal(false)}
@@ -433,7 +541,7 @@ export default function InnovationDetail() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">Archive Innovation?</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to archive this innovation record? 
+              Are you sure you want to archive this innovation record?
               <br />
               It will be hidden from the main list but can still be accessed later.
             </p>
@@ -450,6 +558,36 @@ export default function InnovationDetail() {
                 className="px-6 py-3 bg-orange-600 hover:bg-orange-700 cursor-pointer text-white font-medium rounded-lg transition-colors disabled:opacity-60"
               >
                 {actionLoading ? 'Archiving...' : 'Archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completion Date Confirmation Modal */}
+      {isAuthorized && showDateConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Confirm Completion Date</h3>
+            <p className="text-gray-600 mb-6">
+              Set completion date to <strong>{format(new Date(endDateInput), 'MMMM d, yyyy')}</strong>?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDateConfirm(false);
+                  setDateError(null);
+                }}
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer text-gray-800 font-medium rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSetEndDate}
+                disabled={actionLoading}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 cursor-pointer text-white font-medium rounded-lg transition-colors disabled:opacity-60"
+              >
+                {actionLoading ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>
